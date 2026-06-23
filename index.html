@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CP Fitness — Competitive Research Dashboard</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #ffffff;
+    --bg-secondary: #f5f5f3;
+    --text: #1a1a18;
+    --text-muted: #6b6b67;
+    --border: rgba(0,0,0,0.1);
+    --border-strong: rgba(0,0,0,0.18);
+    --blue: #185FA5;
+    --blue-light: #E6F1FB;
+    --blue-dark: #0C447C;
+    --purple: #534AB7;
+    --purple-light: #EEEDFE;
+    --green: #3B6D11;
+    --green-light: #EAF3DE;
+    --amber: #BA7517;
+    --amber-light: #FAEEDA;
+    --coral: #993C1D;
+    --coral-light: #FAECE7;
+    --gray: #888780;
+    --gray-light: #F1EFE8;
+    --red: #A32D2D;
+    --red-light: #FCEBEB;
+    --radius: 8px;
+    --radius-lg: 12px;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1c1c1a;
+      --bg-secondary: #262624;
+      --text: #f0ede8;
+      --text-muted: #9a9994;
+      --border: rgba(255,255,255,0.1);
+      --border-strong: rgba(255,255,255,0.18);
+      --blue: #378ADD;
+      --blue-light: #0c2a44;
+      --blue-dark: #85B7EB;
+      --purple: #7F77DD;
+      --purple-light: #26215C;
+      --green: #639922;
+      --green-light: #173404;
+      --amber: #EF9F27;
+      --amber-light: #412402;
+      --coral: #D85A30;
+      --coral-light: #4A1B0C;
+      --gray: #B4B2A9;
+      --gray-light: #2C2C2A;
+      --red: #E24B4A;
+      --red-light: #501313;
+    }
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    background: var(--bg-secondary);
+    color: var(--text);
+    min-height: 100vh;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+
+  /* HEADER */
+  .header {
+    background: var(--bg);
+    border-bottom: 0.5px solid var(--border);
+    padding: 16px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .header-left { display: flex; align-items: center; gap: 12px; }
+  .logo { font-size: 13px; font-weight: 600; color: var(--blue); letter-spacing: 0.02em; }
+  .header-title { font-size: 13px; color: var(--text-muted); }
+  .header-badge { font-size: 10px; padding: 3px 8px; border-radius: 20px; background: var(--blue-light); color: var(--blue-dark); font-weight: 500; }
+
+  /* LAYOUT */
+  .layout { max-width: 1100px; margin: 0 auto; padding: 24px 20px; }
+
+  /* NAV TABS */
+  .nav { display: flex; gap: 0; border-bottom: 0.5px solid var(--border); margin-bottom: 24px; overflow-x: auto; }
+  .tab {
+    padding: 10px 18px; font-size: 13px; font-weight: 500;
+    color: var(--text-muted); border-bottom: 2px solid transparent;
+    cursor: pointer; white-space: nowrap; transition: color 0.15s, border-color 0.15s;
+    background: none; border-top: none; border-left: none; border-right: none;
+    font-family: inherit;
+  }
+  .tab:hover { color: var(--text); }
+  .tab.active { color: var(--blue); border-bottom-color: var(--blue); }
+
+  /* PANELS */
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  /* SECTION LABEL */
+  .section-label {
+    font-size: 10px; font-weight: 500; color: var(--text-muted);
+    text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 14px;
+  }
+
+  /* KPI GRID */
+  .kpi-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin-bottom: 20px; }
+  .kpi { background: var(--bg); border: 0.5px solid var(--border); border-radius: var(--radius); padding: 14px 16px; }
+  .kpi-val { font-size: 24px; font-weight: 500; color: var(--text); line-height: 1.1; }
+  .kpi-lbl { font-size: 11px; color: var(--text-muted); margin-top: 4px; }
+  .kpi-sub { font-size: 11px; color: var(--green); margin-top: 3px; font-weight: 500; }
+  .kpi-sub.warn { color: var(--amber); }
+
+  /* CHART CARD */
+  .chart-card {
+    background: var(--bg); border: 0.5px solid var(--border);
+    border-radius: var(--radius-lg); padding: 18px 20px; margin-bottom: 16px;
+  }
+  .chart-title { font-size: 13px; font-weight: 500; color: var(--text); margin-bottom: 3px; }
+  .chart-sub { font-size: 11px; color: var(--text-muted); margin-bottom: 14px; }
+
+  /* BAR CHARTS */
+  .bar-wrap { display: flex; flex-direction: column; gap: 9px; }
+  .bar-row { display: flex; align-items: center; gap: 10px; }
+  .bar-lbl { min-width: 130px; color: var(--text-muted); text-align: right; flex-shrink: 0; font-size: 11px; }
+  .bar-track { flex: 1; background: var(--bg-secondary); border-radius: 4px; height: 20px; overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 4px; display: flex; align-items: center; padding-left: 7px; }
+  .bar-fill span { font-size: 10px; font-weight: 600; color: #fff; }
+  .bar-val { min-width: 52px; font-size: 12px; font-weight: 500; color: var(--text); }
+
+  /* GRID */
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  @media (max-width: 680px) {
+    .two-col { grid-template-columns: 1fr; }
+    .bar-lbl { min-width: 90px; }
+    .header-title { display: none; }
+  }
+
+  /* COMPETITOR CARDS */
+  .competitor-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px; margin-bottom: 16px; }
+  .comp-card { border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 14px; background: var(--bg); }
+  .comp-card.featured { border-color: var(--blue); border-width: 1.5px; }
+  .comp-name { font-size: 12px; font-weight: 600; margin-bottom: 9px; }
+  .comp-row { display: flex; justify-content: space-between; font-size: 11px; margin: 4px 0; }
+  .comp-key { color: var(--text-muted); }
+  .comp-val { font-weight: 500; color: var(--text); }
+  .dot-label { font-size: 10px; color: var(--text-muted); margin-top: 8px; margin-bottom: 3px; }
+  .dot-row { display: flex; gap: 4px; }
+  .dot { width: 10px; height: 10px; border-radius: 50%; }
+  .dot.full { opacity: 1; }
+  .dot.empty { opacity: 0.18; }
+
+  /* FILTER PILLS */
+  .filter-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; align-items: center; }
+  .filter-label { font-size: 11px; color: var(--text-muted); font-weight: 500; }
+  .pill {
+    padding: 5px 13px; border-radius: 20px; font-size: 11px; font-weight: 500;
+    cursor: pointer; border: 0.5px solid var(--border-strong);
+    background: var(--bg); color: var(--text-muted);
+    transition: all 0.12s; font-family: inherit;
+  }
+  .pill:hover { background: var(--bg-secondary); }
+  .pill.on { background: var(--blue-light); color: var(--blue-dark); border-color: var(--blue); }
+
+  /* TABLE */
+  .seg-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .seg-table th {
+    font-size: 10px; font-weight: 500; text-transform: uppercase;
+    letter-spacing: 0.04em; color: var(--text-muted);
+    padding: 8px 10px; border-bottom: 0.5px solid var(--border); text-align: left;
+  }
+  .seg-table td { padding: 8px 10px; border-bottom: 0.5px solid var(--border); color: var(--text); vertical-align: top; }
+  .seg-table tr:last-child td { border-bottom: none; }
+  .seg-table tr.alt { background: var(--bg-secondary); }
+  .td-blue { color: var(--blue); font-weight: 500; }
+  .td-amber { color: var(--amber); font-weight: 500; }
+  .td-green { color: var(--green); font-weight: 500; }
+
+  /* SOURCE NOTE */
+  .source-note {
+    font-size: 10px; color: var(--text-muted); margin-top: 10px;
+    border-top: 0.5px solid var(--border); padding-top: 8px;
+  }
+
+  /* TREND BADGE */
+  .badge { display: inline-block; font-size: 10px; padding: 2px 7px; border-radius: 10px; font-weight: 500; }
+  .badge.up { background: var(--green-light); color: var(--green); }
+  .badge.down { background: var(--red-light); color: var(--red); }
+  .badge.neu { background: var(--gray-light); color: var(--gray); }
+
+  /* FOOTER */
+  .footer {
+    text-align: center; font-size: 11px; color: var(--text-muted);
+    padding: 24px; border-top: 0.5px solid var(--border); margin-top: 8px;
+  }
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="header-left">
+    <span class="logo">CP Fitness</span>
+    <span class="header-title">Competitive Research Dashboard</span>
+  </div>
+  <span class="header-badge">NYU Stern GB2310 · Summer 2026</span>
+</header>
+
+<div class="layout">
+  <nav class="nav">
+    <button class="tab active" onclick="switchTab('industry', this)">Industry Overview</button>
+    <button class="tab" onclick="switchTab('competitors', this)">Competitor Matrix</button>
+    <button class="tab" onclick="switchTab('consumer', this)">Consumer Insights</button>
+    <button class="tab" onclick="switchTab('market', this)">Market Segments</button>
+  </nav>
+
+  <!-- ─── INDUSTRY OVERVIEW ─── -->
+  <div class="panel active" id="panel-industry">
+    <p class="section-label">IBISWorld NAICS 71394 — Gym, Health & Fitness Clubs in the US (Feb 2026)</p>
+
+    <div class="kpi-row">
+      <div class="kpi"><div class="kpi-val">$47.0bn</div><div class="kpi-lbl">Industry Revenue 2026</div><div class="kpi-sub">↑ 1.3% this year</div></div>
+      <div class="kpi"><div class="kpi-val">3.6%</div><div class="kpi-lbl">CAGR 2021–2026</div><div class="kpi-sub">↑ above GDP growth</div></div>
+      <div class="kpi"><div class="kpi-val">12.7%</div><div class="kpi-lbl">Profit Margin</div><div class="kpi-sub">↑ above sector avg</div></div>
+      <div class="kpi"><div class="kpi-val">108k</div><div class="kpi-lbl">US Businesses</div><div class="kpi-sub">↑ 2.1% CAGR</div></div>
+      <div class="kpi"><div class="kpi-val">812k</div><div class="kpi-lbl">Employees</div><div class="kpi-sub">↑ 6.2% CAGR</div></div>
+      <div class="kpi"><div class="kpi-val">$49.1bn</div><div class="kpi-lbl">Forecast 2031</div><div class="kpi-sub kpi-sub warn">↑ 1.4% CAGR outlook</div></div>
+    </div>
+
+    <div class="two-col">
+      <div class="chart-card">
+        <div class="chart-title">Revenue by product segment (2026)</div>
+        <div class="chart-sub">Source: IBISWorld NAICS 71394</div>
+        <div class="bar-wrap">
+          <div class="bar-row"><span class="bar-lbl">Membership fees</span><div class="bar-track"><div class="bar-fill" style="width:70%;background:var(--blue)"><span>70%</span></div></div><span class="bar-val">$32.9bn</span></div>
+          <div class="bar-row"><span class="bar-lbl">Personal trainers</span><div class="bar-track"><div class="bar-fill" style="width:13.1%;background:var(--green)"><span>13%</span></div></div><span class="bar-val">$6.2bn</span></div>
+          <div class="bar-row"><span class="bar-lbl">Meals & beverages</span><div class="bar-track"><div class="bar-fill" style="width:5.4%;background:var(--amber)"><span>5%</span></div></div><span class="bar-val">$2.5bn</span></div>
+          <div class="bar-row"><span class="bar-lbl">Guest admissions</span><div class="bar-track"><div class="bar-fill" style="width:2.3%;background:var(--purple)"></div></div><span class="bar-val">$1.1bn</span></div>
+          <div class="bar-row"><span class="bar-lbl">Merchandise</span><div class="bar-track"><div class="bar-fill" style="width:2.3%;background:var(--coral)"></div></div><span class="bar-val">$1.1bn</span></div>
+          <div class="bar-row"><span class="bar-lbl">Spa services</span><div class="bar-track"><div class="bar-fill" style="width:1.5%;background:var(--gray)"></div></div><span class="bar-val">$706m</span></div>
+        </div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">Market share by company (2026)</div>
+        <div class="chart-sub">Source: IBISWorld — only 13.9% is accounted by top 2 players</div>
+        <div class="bar-wrap">
+          <div class="bar-row"><span class="bar-lbl">Equinox Fitness Clubs</span><div class="bar-track"><div class="bar-fill" style="width:55%;background:var(--purple)"><span>7.4%</span></div></div><span class="bar-val">$3.5bn</span></div>
+          <div class="bar-row"><span class="bar-lbl">Life Time</span><div class="bar-track"><div class="bar-fill" style="width:48%;background:var(--green)"><span>6.5%</span></div></div><span class="bar-val">$3.0bn</span></div>
+          <div class="bar-row"><span class="bar-lbl">Fitness Intl. / LA Fitness</span><div class="bar-track"><div class="bar-fill" style="width:25%;background:var(--gray)"><span>2.5–5%</span></div></div><span class="bar-val">—</span></div>
+          <div class="bar-row"><span class="bar-lbl">24 Hour Fitness</span><div class="bar-track"><div class="bar-fill" style="width:25%;background:var(--gray)"><span>2.5–5%</span></div></div><span class="bar-val">—</span></div>
+          <div class="bar-row"><span class="bar-lbl">Planet Fitness</span><div class="bar-track"><div class="bar-fill" style="width:25%;background:var(--gray)"><span>2.5–5%</span></div></div><span class="bar-val">—</span></div>
+          <div class="bar-row"><span class="bar-lbl">All others (incl. CP Fitness)</span><div class="bar-track"><div class="bar-fill" style="width:100%;background:var(--gray-light)"><span style="color:var(--text-muted)">86.1%</span></div></div><span class="bar-val">$40.5bn</span></div>
+        </div>
+        <div class="source-note">CP Fitness does not appear individually — too small. This is the competitive opportunity.</div>
+      </div>
+    </div>
+
+    <div class="chart-card">
+      <div class="chart-title">Key external drivers</div>
+      <div class="chart-sub">Source: IBISWorld NAICS 71394</div>
+      <div class="bar-wrap">
+        <div class="bar-row"><span class="bar-lbl">Participation in sports</span><div class="bar-track"><div class="bar-fill" style="width:90%;background:var(--green)"><span>Positive ↑</span></div></div></div>
+        <div class="bar-row"><span class="bar-lbl">Consumer spending</span><div class="bar-track"><div class="bar-fill" style="width:80%;background:var(--green)"><span>Positive ↑</span></div></div></div>
+        <div class="bar-row"><span class="bar-lbl">Time on leisure & sports</span><div class="bar-track"><div class="bar-fill" style="width:75%;background:var(--green)"><span>Positive ↑</span></div></div></div>
+        <div class="bar-row"><span class="bar-lbl">Adults aged 20–64</span><div class="bar-track"><div class="bar-fill" style="width:65%;background:var(--blue)"><span>Positive ↑</span></div></div></div>
+        <div class="bar-row"><span class="bar-lbl">Prime rate</span><div class="bar-track"><div class="bar-fill" style="width:60%;background:var(--red)"><span>Negative ↓</span></div></div></div>
+      </div>
+      <div class="source-note">Industry structure: Competition High & Increasing · Concentration Low · Barriers to Entry Low, Steady · Life Cycle: Mature</div>
+    </div>
+
+    <div class="chart-card">
+      <div class="chart-title">Key success factors — mapped to CP Fitness</div>
+      <div class="chart-sub">Source: IBISWorld NAICS 71394 Key Success Factors chapter</div>
+      <table class="seg-table">
+        <thead><tr><th>IBISWorld success factor</th><th>CP Fitness assessment</th><th>Signal</th></tr></thead>
+        <tbody>
+          <tr><td>Develop a clear market position</td><td class="td-amber">Core tension — sports heritage vs. standalone luxury brand</td><td><span class="badge neu">Gap</span></td></tr>
+          <tr class="alt"><td>Generate repeat customers / high retention</td><td class="td-green">96% recommend; 3× weekly visits</td><td><span class="badge up">Strong</span></td></tr>
+          <tr><td>Appeal to desired demographic (disposable income)</td><td class="td-green">Median member age 30; Millennial/Gen Z focus</td><td><span class="badge up">Strong</span></td></tr>
+          <tr class="alt"><td>Operate in highly visible, accessible location</td><td>5 NYC clubs + expansion pipeline</td><td><span class="badge up">Growing</span></td></tr>
+          <tr><td>Develop strong brand reputation</td><td class="td-amber">Dual identity ambiguity — the CP Fitness question mark</td><td><span class="badge neu">Gap</span></td></tr>
+          <tr class="alt"><td>Vary services to suit different needs</td><td class="td-green">Pool, courts, Pilates, unlimited group classes</td><td><span class="badge up">Strong</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ─── COMPETITORS ─── -->
+  <div class="panel" id="panel-competitors">
+    <p class="section-label">Competitive positioning — CP Fitness vs. key players</p>
+
+    <div class="competitor-grid">
+      <div class="comp-card featured">
+        <div class="comp-name" style="color:var(--blue)">Chelsea Piers Fitness</div>
+        <div class="comp-row"><span class="comp-key">Monthly price</span><span class="comp-val">$185–$260</span></div>
+        <div class="comp-row"><span class="comp-key">IBISWorld coverage</span><span class="comp-val">&lt;0.1% (niche)</span></div>
+        <div class="comp-row"><span class="comp-key">Locations</span><span class="comp-val">5 (NYC + CT)</span></div>
+        <div class="comp-row"><span class="comp-key">Members</span><span class="comp-val">23k+</span></div>
+        <div class="comp-row"><span class="comp-key">Recommend rate</span><span class="comp-val">96%</span></div>
+        <div class="dot-label">Facility breadth</div>
+        <div class="dot-row">
+          <div class="dot full" style="background:var(--blue)"></div><div class="dot full" style="background:var(--blue)"></div><div class="dot full" style="background:var(--blue)"></div><div class="dot full" style="background:var(--blue)"></div><div class="dot empty" style="background:var(--blue)"></div>
+        </div>
+        <div class="dot-label">Brand clarity</div>
+        <div class="dot-row">
+          <div class="dot full" style="background:var(--blue)"></div><div class="dot full" style="background:var(--blue)"></div><div class="dot full" style="background:var(--blue)"></div><div class="dot empty" style="background:var(--blue)"></div><div class="dot empty" style="background:var(--blue)"></div>
+        </div>
+        <div class="dot-label">Gen Z community</div>
+        <div class="dot-row">
+          <div class="dot full" style="background:var(--blue)"></div><div class="dot full" style="background:var(--blue)"></div><div class="dot full" style="background:var(--blue)"></div><div class="dot empty" style="background:var(--blue)"></div><div class="dot empty" style="background:var(--blue)"></div>
+        </div>
+      </div>
+
+      <div class="comp-card">
+        <div class="comp-name" style="color:var(--purple)">Equinox</div>
+        <div class="comp-row"><span class="comp-key">Monthly price</span><span class="comp-val">$215–$395</span></div>
+        <div class="comp-row"><span class="comp-key">IBISWorld share</span><span class="comp-val">7.4% ($3.5bn)</span></div>
+        <div class="comp-row"><span class="comp-key">Locations</span><span class="comp-val">190 clubs (US)</span></div>
+        <div class="comp-row"><span class="comp-key">Employees</span><span class="comp-val">5,001–10,000</span></div>
+        <div class="comp-row"><span class="comp-key">Key differentiator</span><span class="comp-val">Clearest luxury brand</span></div>
+        <div class="dot-label">Facility breadth</div>
+        <div class="dot-row">
+          <div class="dot full" style="background:var(--purple)"></div><div class="dot full" style="background:var(--purple)"></div><div class="dot full" style="background:var(--purple)"></div><div class="dot full" style="background:var(--purple)"></div><div class="dot empty" style="background:var(--purple)"></div>
+        </div>
+        <div class="dot-label">Brand clarity</div>
+        <div class="dot-row">
+          <div class="dot full" style="background:var(--purple)"></div><div class="dot full" style="background:var(--purple)"></div><div class="dot full" style="background:var(--purple)"></div><div class="dot full" style="background:var(--purple)"></div><div class="dot full" style="background:var(--purple)"></div>
+        </div>
+        <div class="dot-label">Gen Z community</div>
+        <div class="dot-row">
+          <div class="dot full" style="background:var(--purple)"></div><div class="dot full" style="background:var(--purple)"></div><div class="dot full" style="background:var(--purple)"></div><div class="dot empty" style="background:var(--purple)"></div><div class="dot empty" style="background:var(--purple)"></div>
+        </div>
+      </div>
+
+      <div class="comp-card">
+        <div class="comp-name" style="color:var(--green)">Life Time</div>
+        <div class="comp-row"><span class="comp-key">Monthly price</span><span class="comp-val">$250–$379 NYC</span></div>
+        <div class="comp-row"><span class="comp-key">IBISWorld share</span><span class="comp-val">6.5% ($3.0bn)</span></div>
+        <div class="comp-row"><span class="comp-key">Locations</span><span class="comp-val">226 clubs (US)</span></div>
+        <div class="comp-row"><span class="comp-key">Employees</span><span class="comp-val">10,000+</span></div>
+        <div class="comp-row"><span class="comp-key">Key differentiator</span><span class="comp-val">Widest amenity set</span></div>
+        <div class="dot-label">Facility breadth</div>
+        <div class="dot-row">
+          <div class="dot full" style="background:var(--green)"></div><div class="dot full" style="background:var(--green)"></div><div class="dot full" style="background:var(--green)"></div><div class="dot full" style="background:var(--green)"></div><div class="dot full" style="background:var(--green)"></div>
+        </div>
+        <div class="dot-label">Brand clarity</div>
+        <div class="dot-row">
+          <div class="dot full" style="background:var(--green)"></div><div class="dot full" style="background:var(--green)"></div><div class="dot full" style="background:var(--green)"></div><div class="dot full" style="background:var(--green)"></div><div class="dot empty" style="background:var(--green)"></div>
+        </div>
+        <div class="dot-label">Gen Z community</div>
+        <div class="dot-row">
+          <div class="dot full" style="background:var(--green)"></div><div class="dot full" style="background:var(--green)"></div><div class="dot full" style="background:var(--green)"></div><div class="dot full" style="background:var(--green)"></div><div class="dot empty" style="background:var(--green)"></div>
+        </div>
+      </div>
+
+      <div class="comp-card">
+        <div class="comp-name" style="color:var(--amber)">SoulCycle</div>
+        <div class="comp-row"><span class="comp-key">Price</span><span class="comp-val">~$36/class</span></div>
+        <div class="comp-row"><span class="comp-key">Monthly equiv.</span><span class="comp-val">$134–$481</span></div>
+        <div class="comp-row"><span class="comp-key">Parent</span><span class="comp-val">Equinox Group</span></div>
+        <div class="comp-row"><span class="comp-key">Model</span><span class="comp-val">Pay-per-class only</span></div>
+        <div class="comp-row"><span class="comp-key">Key differentiator</span><span class="comp-val">Cult tribe model</span></div>
+        <div class="dot-label">Facility breadth</div>
+        <div class="dot-row">
+          <div class="dot full" style="background:var(--amber)"></div><div class="dot empty" style="background:var(--amber)"></div><div class="dot empty" style="background:var(--amber)"></div><div class="dot empty" style="background:var(--amber)"></div><div class="dot empty" style="background:var(--amber)"></div>
+        </div>
+        <div class="dot-label">Brand clarity</div>
+        <div class="dot-row">
+          <div class="dot full" style="background:var(--amber)"></div><div class="dot full" style="background:var(--amber)"></div><div class="dot full" style="background:var(--amber)"></div><div class="dot full" style="background:var(--amber)"></div><div class="dot empty" style="background:var(--amber)"></div>
+        </div>
+        <div class="dot-label">Gen Z community</div>
+        <div class="dot-row">
+          <div class="dot full" style="background:var(--amber)"></div><div class="dot full" style="background:var(--amber)"></div><div class="dot full" style="background:var(--amber)"></div><div class="dot full" style="background:var(--amber)"></div><div class="dot full" style="background:var(--amber)"></div>
+        </div>
+      </div>
+
+      <div class="comp-card">
+        <div class="comp-name" style="color:var(--coral)">Boutique Studios</div>
+        <div class="comp-row"><span class="comp-key">Price</span><span class="comp-val">$30–$45/class</span></div>
+        <div class="comp-row"><span class="comp-key">Monthly equiv.</span><span class="comp-val">$150–$350</span></div>
+        <div class="comp-row"><span class="comp-key">Examples</span><span class="comp-val">Solidcore, Barry's</span></div>
+        <div class="comp-row"><span class="comp-key">Statista brand share</span><span class="comp-val">Orangetheory: 1%</span></div>
+        <div class="comp-row"><span class="comp-key">Key differentiator</span><span class="comp-val">Social-first identity</span></div>
+        <div class="dot-label">Facility breadth</div>
+        <div class="dot-row">
+          <div class="dot full" style="background:var(--coral)"></div><div class="dot full" style="background:var(--coral)"></div><div class="dot empty" style="background:var(--coral)"></div><div class="dot empty" style="background:var(--coral)"></div><div class="dot empty" style="background:var(--coral)"></div>
+        </div>
+        <div class="dot-label">Brand clarity</div>
+        <div class="dot-row">
+          <div class="dot full" style="background:var(--coral)"></div><div class="dot full" style="background:var(--coral)"></div><div class="dot full" style="background:var(--coral)"></div><div class="dot full" style="background:var(--coral)"></div><div class="dot empty" style="background:var(--coral)"></div>
+        </div>
+        <div class="dot-label">Gen Z community</div>
+        <div class="dot-row">
+          <div class="dot full" style="background:var(--coral)"></div><div class="dot full" style="background:var(--coral)"></div><div class="dot full" style="background:var(--coral)"></div><div class="dot full" style="background:var(--coral)"></div><div class="dot full" style="background:var(--coral)"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="chart-card">
+      <div class="chart-title">Price comparison — monthly cost, NYC single adult</div>
+      <div class="chart-sub">Sources: brand websites, NerdWallet, IBISWorld, member-reported data</div>
+      <div class="bar-wrap">
+        <div class="bar-row"><span class="bar-lbl">CP Fitness (Club)</span><div class="bar-track"><div class="bar-fill" style="width:46%;background:var(--blue)"><span>$185</span></div></div><span class="bar-val">$185–260</span></div>
+        <div class="bar-row"><span class="bar-lbl">Boutique studios</span><div class="bar-track"><div class="bar-fill" style="width:50%;background:var(--coral)"><span>~$200</span></div></div><span class="bar-val">$150–350</span></div>
+        <div class="bar-row"><span class="bar-lbl">Equinox (single club)</span><div class="bar-track"><div class="bar-fill" style="width:54%;background:var(--purple)"><span>$215</span></div></div><span class="bar-val">$215–395</span></div>
+        <div class="bar-row"><span class="bar-lbl">Life Time (NYC)</span><div class="bar-track"><div class="bar-fill" style="width:62%;background:var(--green)"><span>$250</span></div></div><span class="bar-val">$250–379</span></div>
+        <div class="bar-row"><span class="bar-lbl">SoulCycle (8 classes)</span><div class="bar-track"><div class="bar-fill" style="width:67%;background:var(--amber)"><span>~$270</span></div></div><span class="bar-val">$134–481</span></div>
+      </div>
+      <div class="source-note">CP Fitness's $185 Club Single entry point is the most competitive among full-service luxury clubs — a pricing advantage that is currently underleveraged in brand messaging.</div>
+    </div>
+  </div>
+
+  <!-- ─── CONSUMER INSIGHTS ─── -->
+  <div class="panel" id="panel-consumer">
+    <p class="section-label">Statista Consumer Survey — US Sports & Fitness 2021 & 2024</p>
+
+    <div class="two-col">
+      <div class="chart-card">
+        <div class="chart-title">Gym membership by brand (2024)</div>
+        <div class="chart-sub">Statista — respondents who are gym members, n=1,030 (Nov 2024)</div>
+        <div class="bar-wrap">
+          <div class="bar-row"><span class="bar-lbl" style="min-width:110px">24 Hour Fitness</span><div class="bar-track"><div class="bar-fill" style="width:23%;background:var(--gray)"><span>23%</span></div></div><span class="bar-val">= 2021</span></div>
+          <div class="bar-row"><span class="bar-lbl" style="min-width:110px">Anytime Fitness</span><div class="bar-track"><div class="bar-fill" style="width:12%;background:var(--gray)"><span>12%</span></div></div><span class="bar-val">↑ 9%</span></div>
+          <div class="bar-row"><span class="bar-lbl" style="min-width:110px">LA Fitness</span><div class="bar-track"><div class="bar-fill" style="width:9%;background:var(--gray)"><span>9%</span></div></div><span class="bar-val">↑ 6%</span></div>
+          <div class="bar-row"><span class="bar-lbl" style="min-width:110px">Crunch Fitness</span><div class="bar-track"><div class="bar-fill" style="width:3%;background:var(--gray)"><span></span></div></div><span class="bar-val">↓ 7%</span></div>
+          <div class="bar-row"><span class="bar-lbl" style="min-width:110px">Equinox Fitness</span><div class="bar-track"><div class="bar-fill" style="width:2%;background:var(--purple)"><span></span></div></div><span class="bar-val" style="color:var(--purple)">2% (↓ 3%)</span></div>
+          <div class="bar-row"><span class="bar-lbl" style="min-width:110px">Lifetime Fitness</span><div class="bar-track"><div class="bar-fill" style="width:1%;background:var(--green)"><span></span></div></div><span class="bar-val" style="color:var(--green)">1% (↓ 3%)</span></div>
+          <div class="bar-row"><span class="bar-lbl" style="min-width:110px">Planet Fitness</span><div class="bar-track"><div class="bar-fill" style="width:1%;background:var(--gray)"><span></span></div></div><span class="bar-val">1% (↓ 12%)</span></div>
+        </div>
+        <div class="source-note">Note: Equinox and Life Time's low % reflects their NYC/urban concentration vs. Statista's broader US panel — not actual decline in quality.</div>
+      </div>
+
+      <div class="chart-card">
+        <div class="chart-title">Why people join gyms</div>
+        <div class="chart-sub">Statista multi-pick — gym members (2021)</div>
+        <div class="bar-wrap">
+          <div class="bar-row"><span class="bar-lbl" style="min-width:140px">To be fit & in shape</span><div class="bar-track"><div class="bar-fill" style="width:44%;background:var(--blue)"><span>44%</span></div></div></div>
+          <div class="bar-row"><span class="bar-lbl" style="min-width:140px">Healthy & active life</span><div class="bar-track"><div class="bar-fill" style="width:42%;background:var(--blue)"><span>42%</span></div></div></div>
+          <div class="bar-row"><span class="bar-lbl" style="min-width:140px">Build muscles</span><div class="bar-track"><div class="bar-fill" style="width:34%;background:var(--green)"><span>34%</span></div></div></div>
+          <div class="bar-row"><span class="bar-lbl" style="min-width:140px">Look good</span><div class="bar-track"><div class="bar-fill" style="width:32%;background:var(--green)"><span>32%</span></div></div></div>
+          <div class="bar-row"><span class="bar-lbl" style="min-width:140px">Relieve stress / mental health</span><div class="bar-track"><div class="bar-fill" style="width:28%;background:var(--amber)"><span>28%</span></div></div></div>
+          <div class="bar-row"><span class="bar-lbl" style="min-width:140px">Meet new people</span><div class="bar-track"><div class="bar-fill" style="width:28%;background:var(--coral)"><span>28%</span></div></div></div>
+          <div class="bar-row"><span class="bar-lbl" style="min-width:140px">Exciting experiences</span><div class="bar-track"><div class="bar-fill" style="width:25%;background:var(--coral)"><span>25%</span></div></div></div>
+          <div class="bar-row"><span class="bar-lbl" style="min-width:140px">Time with family/friends</span><div class="bar-track"><div class="bar-fill" style="width:18%;background:var(--purple)"><span>18%</span></div></div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="two-col">
+      <div class="chart-card">
+        <div class="chart-title">Most important gym aspects</div>
+        <div class="chart-sub">Statista multi-pick — all respondents (2021)</div>
+        <div class="bar-wrap">
+          <div class="bar-row"><span class="bar-lbl" style="min-width:140px">Price & contract</span><div class="bar-track"><div class="bar-fill" style="width:37%;background:var(--blue)"><span>37%</span></div></div></div>
+          <div class="bar-row"><span class="bar-lbl" style="min-width:140px">Location</span><div class="bar-track"><div class="bar-fill" style="width:37%;background:var(--blue)"><span>37%</span></div></div></div>
+          <div class="bar-row"><span class="bar-lbl" style="min-width:140px">Equipment & facilities</span><div class="bar-track"><div class="bar-fill" style="width:35%;background:var(--green)"><span>35%</span></div></div></div>
+          <div class="bar-row"><span class="bar-lbl" style="min-width:140px">Staff</span><div class="bar-track"><div class="bar-fill" style="width:26%;background:var(--green)"><span>26%</span></div></div></div>
+          <div class="bar-row"><span class="bar-lbl" style="min-width:140px">Atmosphere & design</span><div class="bar-track"><div class="bar-fill" style="width:25%;background:var(--amber)"><span>25%</span></div></div></div>
+          <div class="bar-row"><span class="bar-lbl" style="min-width:140px">Sauna / wellness / spa</span><div class="bar-track"><div class="bar-fill" style="width:20%;background:var(--purple)"><span>20%</span></div></div></div>
+          <div class="bar-row"><span class="bar-lbl" style="min-width:140px">Courses & classes</span><div class="bar-track"><div class="bar-fill" style="width:18%;background:var(--purple)"><span>18%</span></div></div></div>
+          <div class="bar-row"><span class="bar-lbl" style="min-width:140px">Image</span><div class="bar-track"><div class="bar-fill" style="width:17%;background:var(--coral)"><span>17%</span></div></div></div>
+        </div>
+      </div>
+
+      <div class="chart-card">
+        <div class="chart-title">Why people quit gym memberships</div>
+        <div class="chart-sub">Statista multi-pick — former gym members (2021)</div>
+        <div class="bar-wrap">
+          <div class="bar-row"><span class="bar-lbl" style="min-width:140px">Fee too expensive</span><div class="bar-track"><div class="bar-fill" style="width:26%;background:var(--red)"><span>26%</span></div></div></div>
+          <div class="bar-row"><span class="bar-lbl" style="min-width:140px">No time / desire to go</span><div class="bar-track"><div class="bar-fill" style="width:25%;background:var(--red)"><span>25%</span></div></div></div>
+          <div class="bar-row"><span class="bar-lbl" style="min-width:140px">COVID-related</span><div class="bar-track"><div class="bar-fill" style="width:21%;background:var(--gray)"><span>21%</span></div></div></div>
+          <div class="bar-row"><span class="bar-lbl" style="min-width:140px">Gym too far away</span><div class="bar-track"><div class="bar-fill" style="width:17%;background:var(--amber)"><span>17%</span></div></div></div>
+          <div class="bar-row"><span class="bar-lbl" style="min-width:140px">Hours didn't fit</span><div class="bar-track"><div class="bar-fill" style="width:13%;background:var(--amber)"><span>13%</span></div></div></div>
+          <div class="bar-row"><span class="bar-lbl" style="min-width:140px">Poor equipment/facilities</span><div class="bar-track"><div class="bar-fill" style="width:12%;background:var(--amber)"><span>12%</span></div></div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="chart-card">
+      <div class="chart-title">Services members actually use at their gym</div>
+      <div class="chart-sub">Statista multi-pick — respondents who are gym members (2021) — maps directly to CP Fitness's amenity offering</div>
+      <div class="bar-wrap">
+        <div class="bar-row"><span class="bar-lbl" style="min-width:210px">Training & workout equipment</span><div class="bar-track"><div class="bar-fill" style="width:38%;background:var(--blue)"><span>38%</span></div></div></div>
+        <div class="bar-row"><span class="bar-lbl" style="min-width:210px">Convenience items (towels, drinks)</span><div class="bar-track"><div class="bar-fill" style="width:31%;background:var(--blue)"><span>31%</span></div></div></div>
+        <div class="bar-row"><span class="bar-lbl" style="min-width:210px">Sports equipment (punching bags etc.)</span><div class="bar-track"><div class="bar-fill" style="width:30%;background:var(--green)"><span>30%</span></div></div></div>
+        <div class="bar-row"><span class="bar-lbl" style="min-width:210px">Personal trainer(s)</span><div class="bar-track"><div class="bar-fill" style="width:29%;background:var(--green)"><span>29%</span></div></div></div>
+        <div class="bar-row"><span class="bar-lbl" style="min-width:210px">Wellness / spa ✓ CP Fitness</span><div class="bar-track"><div class="bar-fill" style="width:24%;background:var(--purple)"><span>24%</span></div></div></div>
+        <div class="bar-row"><span class="bar-lbl" style="min-width:210px">Pool ✓ CP Fitness</span><div class="bar-track"><div class="bar-fill" style="width:24%;background:var(--purple)"><span>24%</span></div></div></div>
+        <div class="bar-row"><span class="bar-lbl" style="min-width:210px">Professional advice / training plans</span><div class="bar-track"><div class="bar-fill" style="width:23%;background:var(--amber)"><span>23%</span></div></div></div>
+        <div class="bar-row"><span class="bar-lbl" style="min-width:210px">Coached group classes ✓ CP Fitness</span><div class="bar-track"><div class="bar-fill" style="width:21%;background:var(--amber)"><span>21%</span></div></div></div>
+        <div class="bar-row"><span class="bar-lbl" style="min-width:210px">Sports facilities (courts) ✓ CP Fitness</span><div class="bar-track"><div class="bar-fill" style="width:20%;background:var(--coral)"><span>20%</span></div></div></div>
+      </div>
+      <div class="source-note">CP Fitness covers pool (24%), spa (24%), group classes (21%), and courts (20%) — all in the top 9 most-used services. This is a quantifiable amenity advantage over boutiques and Equinox (no pool at most locations).</div>
+    </div>
+  </div>
+
+  <!-- ─── MARKET SEGMENTS ─── -->
+  <div class="panel" id="panel-market">
+    <p class="section-label">Market segmentation — IBISWorld + Statista + Bloomberg/Mintel</p>
+
+    <div class="kpi-row">
+      <div class="kpi"><div class="kpi-val">77M</div><div class="kpi-lbl">US fitness members 2024</div><div class="kpi-sub">↑ from 72.9M in 2023</div></div>
+      <div class="kpi"><div class="kpi-val">25%</div><div class="kpi-lbl">US population with membership</div><div class="kpi-sub">~1 in 4 Americans</div></div>
+      <div class="kpi"><div class="kpi-val">60%</div><div class="kpi-lbl">Avg. member retention rate</div><div class="kpi-sub">Premium: 70–80%</div></div>
+      <div class="kpi"><div class="kpi-val">48%</div><div class="kpi-lbl">Millennials → premium gyms</div><div class="kpi-sub">Boutique or high-end</div></div>
+      <div class="kpi"><div class="kpi-val">30%</div><div class="kpi-lbl">Gen Z at fitness facilities</div><div class="kpi-sub">50% interested in starting</div></div>
+    </div>
+
+    <div class="two-col">
+      <div class="chart-card">
+        <div class="chart-title">Industry revenue by age segment (2026)</div>
+        <div class="chart-sub">Source: IBISWorld NAICS 71394</div>
+        <div class="bar-wrap">
+          <div class="bar-row"><span class="bar-lbl" style="min-width:100px">Ages 18–34</span><div class="bar-track"><div class="bar-fill" style="width:28.7%;background:var(--blue)"><span>28.7%</span></div></div><span class="bar-val">$13.5bn</span></div>
+          <div class="bar-row"><span class="bar-lbl" style="min-width:100px">Ages 35–50</span><div class="bar-track"><div class="bar-fill" style="width:28.6%;background:var(--purple)"><span>28.6%</span></div></div><span class="bar-val">$13.5bn</span></div>
+          <div class="bar-row"><span class="bar-lbl" style="min-width:100px">Ages 50+</span><div class="bar-track"><div class="bar-fill" style="width:24.1%;background:var(--green)"><span>24.1%</span></div></div><span class="bar-val">$11.3bn</span></div>
+          <div class="bar-row"><span class="bar-lbl" style="min-width:100px">Under 18</span><div class="bar-track"><div class="bar-fill" style="width:18.6%;background:var(--amber)"><span>18.6%</span></div></div><span class="bar-val">$8.7bn</span></div>
+        </div>
+        <div class="source-note">CP Fitness median member age = 30. This places the member base squarely in the 18–34 bracket — the highest per-user spending segment and the primary driver of hybrid memberships.</div>
+      </div>
+
+      <div class="chart-card">
+        <div class="chart-title">US gym membership status (2021)</div>
+        <div class="chart-sub">Source: Statista — all respondents</div>
+        <div class="bar-wrap">
+          <div class="bar-row"><span class="bar-lbl" style="min-width:150px">Active gym member</span><div class="bar-track"><div class="bar-fill" style="width:35%;background:var(--blue)"><span>35%</span></div></div><span class="bar-val">35%</span></div>
+          <div class="bar-row"><span class="bar-lbl" style="min-width:150px">Member (never goes)</span><div class="bar-track"><div class="bar-fill" style="width:8%;background:var(--amber)"><span>8%</span></div></div><span class="bar-val">8%</span></div>
+          <div class="bar-row"><span class="bar-lbl" style="min-width:150px">Quit past 12 months</span><div class="bar-track"><div class="bar-fill" style="width:7%;background:var(--red)"><span>7%</span></div></div><span class="bar-val">7%</span></div>
+          <div class="bar-row"><span class="bar-lbl" style="min-width:150px">Quit over a year ago</span><div class="bar-track"><div class="bar-fill" style="width:13%;background:var(--gray)"><span>13%</span></div></div><span class="bar-val">13%</span></div>
+          <div class="bar-row"><span class="bar-lbl" style="min-width:150px">Never been a member</span><div class="bar-track"><div class="bar-fill" style="width:30%;background:var(--gray-light)"><span style="color:var(--text-muted)">30%</span></div></div><span class="bar-val">30%</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="chart-card">
+      <div class="chart-title">Gen Z & Millennial insights — implications for CP Fitness</div>
+      <div class="chart-sub">Sources: IBISWorld (2026), Bloomberg/Mintel (May 2026), Les Mills Gen Z Report, Statista (2024)</div>
+      <table class="seg-table">
+        <thead><tr><th>Insight</th><th>Data point</th><th>Source</th><th>CP Fitness implication</th></tr></thead>
+        <tbody>
+          <tr><td>Gen Z gym spending rising</td><td class="td-green">30% spending more on gym memberships vs. prior year</td><td style="color:var(--text-muted)">Mintel, 2026</td><td>Tailwind for premium expansion</td></tr>
+          <tr class="alt"><td>Gen Z wellness focus intensifying</td><td class="td-green">77% more focused on wellness than a year ago</td><td style="color:var(--text-muted)">Mintel survey, 2026</td><td>CP Fitness must signal wellness identity, not just sports</td></tr>
+          <tr><td>Gyms replacing bars as social hubs</td><td>Boutiques/premium gyms filling role once held by nightlife</td><td style="color:var(--text-muted)">Bloomberg, May 2026</td><td>Community programming is a growth lever</td></tr>
+          <tr class="alt"><td>Group class → retention link</td><td class="td-green">53% of group class regulars renew memberships</td><td style="color:var(--text-muted)">Smart Health Clubs / IBISWorld</td><td>CP Fitness unlimited group classes = retention anchor</td></tr>
+          <tr><td>Millennial premium gym choice</td><td>48% of Millennials select boutique or high-end gym</td><td style="color:var(--text-muted)">Smart Health Club / IBISWorld</td><td>Direct target market — CP Fitness competes here</td></tr>
+          <tr class="alt"><td>Gen Z multi-format preference</td><td class="td-green">65% of Gen Z gym-goers enjoy mixing workout types</td><td style="color:var(--text-muted)">Les Mills / IBISWorld</td><td>CP Fitness breadth (pool + classes + courts) is a strong fit</td></tr>
+          <tr><td>Digital supplement expectation</td><td class="td-amber">85% of gymgoers supplement in-person with at-home workouts</td><td style="color:var(--text-muted)">Les Mills / IBISWorld</td><td>CP Fitness digital offering is a gap to monitor</td></tr>
+          <tr class="alt"><td>Total US fitness market</td><td class="td-green">77 million Americans held a fitness membership in 2024</td><td style="color:var(--text-muted)">Health & Fitness Association / IBISWorld</td><td>~25% of US population — large TAM for CP Fitness expansion</td></tr>
+        </tbody>
+      </table>
+      <div class="source-note">All data sourced from uploaded project documents: IBISWorld NAICS 71394 (Feb 2026) · Statista CSVs (2021 & 2024) · Bloomberg article (May 2026) · CP Fitness Intro Deck (May 2026). NYU Stern GB2310 Summer 2026.</div>
+    </div>
+  </div>
+</div>
+
+<footer class="footer">
+  NYU Stern GB2310 · Chelsea Piers Fitness Marketing Strategy · Summer 2026 · Research data: IBISWorld, Statista, Bloomberg, CP Fitness internal
+</footer>
+
+<script>
+  function switchTab(id, el) {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    el.classList.add('active');
+    document.getElementById('panel-' + id).classList.add('active');
+  }
+</script>
+</body>
+</html>
